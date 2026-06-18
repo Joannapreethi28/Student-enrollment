@@ -1,4 +1,4 @@
-rom repositories.enrollment_repository import EnrollmentRepository
+from repositories.enrollment_repository import EnrollmentRepository
 from services.student_service import StudentService
 from services.teacher_service import TeacherService
 from models.enrollment import Enrollment
