@@ -30,6 +30,9 @@ enrollment_controller = EnrollmentController()
 # SESSION STATE
 # ---------------------------------------------------
 
+if "active_module" not in st.session_state:
+    st.session_state.active_module = "Common Dashboard"
+
 if "student_action" not in st.session_state:
     st.session_state.student_action = "Add Student"
 
@@ -59,10 +62,6 @@ def safe(value):
     if value is None:
         return ""
     return html.escape(str(value))
-
-
-def to_dict_list(items):
-    return [item.to_dict() for item in items]
 
 
 def page_heading(title, subtitle):
@@ -102,28 +101,34 @@ def action_card(title, description):
     )
 
 
-def table_start(headers):
-    header_html = ""
+def custom_table(headers, rows):
+    table_html = '<table class="custom-table">'
+    table_html += '<thead><tr>'
 
     for header in headers:
-        header_html += f"<th>{safe(header)}</th>"
+        table_html += f'<th>{safe(header)}</th>'
 
-    return f"""
-    <table class="custom-table">
-        <thead>
-            <tr>
-                {header_html}
-            </tr>
-        </thead>
-        <tbody>
-    """
+    table_html += '</tr></thead>'
+    table_html += '<tbody>'
+
+    for row in rows:
+        table_html += '<tr>'
+
+        for value in row:
+            table_html += f'<td>{safe(value)}</td>'
+
+        table_html += '</tr>'
+
+    table_html += '</tbody></table>'
+
+    st.markdown(
+        table_html,
+        unsafe_allow_html=True
+    )
 
 
-def table_end():
-    return """
-        </tbody>
-    </table>
-    """
+def set_module(module_name):
+    st.session_state.active_module = module_name
 
 
 # ---------------------------------------------------
@@ -152,7 +157,7 @@ st.markdown(
         padding: 36px;
         border-radius: 28px;
         color: white;
-        margin-bottom: 28px;
+        margin-bottom: 26px;
         box-shadow: 0 20px 45px rgba(37, 99, 235, 0.25);
     }
 
@@ -170,8 +175,17 @@ st.markdown(
         color: white;
     }
 
+    .nav-box {
+        background: rgba(255, 255, 255, 0.88);
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+        margin-bottom: 26px;
+    }
+
     .page-heading {
-        background: rgba(255, 255, 255, 0.86);
+        background: rgba(255, 255, 255, 0.88);
         padding: 22px 26px;
         border-radius: 22px;
         border: 1px solid rgba(148, 163, 184, 0.25);
@@ -197,7 +211,8 @@ st.markdown(
         border: 1px solid rgba(148, 163, 184, 0.25);
         box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
         transition: 0.25s ease;
-        min-height: 160px;
+        min-height: 155px;
+        margin-bottom: 18px;
     }
 
     .metric-card:hover {
@@ -272,6 +287,7 @@ st.markdown(
 
     .module-box p {
         color: #475569;
+        margin-bottom: 0;
     }
 
     div[data-testid="stForm"] {
@@ -356,28 +372,6 @@ st.markdown(
         border-radius: 12px;
     }
 
-    div[data-baseweb="tab-list"] {
-        gap: 12px;
-        background: rgba(255, 255, 255, 0.86);
-        padding: 12px;
-        border-radius: 22px;
-        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
-        margin-bottom: 24px;
-    }
-
-    button[data-baseweb="tab"] {
-        background: transparent;
-        border-radius: 16px;
-        padding: 12px 22px;
-        font-weight: 800;
-        color: #334155;
-    }
-
-    button[data-baseweb="tab"][aria-selected="true"] {
-        background: linear-gradient(120deg, #2563eb, #7c3aed);
-        color: white;
-    }
-
     h1, h2, h3 {
         color: #0f172a;
     }
@@ -404,16 +398,55 @@ st.markdown(
 
 
 # ---------------------------------------------------
-# TOP NAVIGATION
+# TOP NAVIGATION BAR
 # ---------------------------------------------------
 
-common_tab, students_tab, teachers_tab, enrollments_tab = st.tabs(
-    [
+st.markdown(
+    """
+    <div class="nav-box">
+    """,
+    unsafe_allow_html=True
+)
+
+nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
+
+with nav_col1:
+    if st.button(
         "Common Dashboard",
+        use_container_width=True,
+        type="primary" if st.session_state.active_module == "Common Dashboard" else "secondary"
+    ):
+        set_module("Common Dashboard")
+
+with nav_col2:
+    if st.button(
         "Students",
+        use_container_width=True,
+        type="primary" if st.session_state.active_module == "Students" else "secondary"
+    ):
+        set_module("Students")
+
+with nav_col3:
+    if st.button(
         "Teachers",
-        "Enrollments"
-    ]
+        use_container_width=True,
+        type="primary" if st.session_state.active_module == "Teachers" else "secondary"
+    ):
+        set_module("Teachers")
+
+with nav_col4:
+    if st.button(
+        "Enrollments",
+        use_container_width=True,
+        type="primary" if st.session_state.active_module == "Enrollments" else "secondary"
+    ):
+        set_module("Enrollments")
+
+st.markdown(
+    """
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 
@@ -421,7 +454,7 @@ common_tab, students_tab, teachers_tab, enrollments_tab = st.tabs(
 # COMMON DASHBOARD
 # ---------------------------------------------------
 
-with common_tab:
+if st.session_state.active_module == "Common Dashboard":
 
     students = student_controller.get_all_students()
     teachers = teacher_controller.get_all_teachers()
@@ -482,7 +515,7 @@ with common_tab:
 # STUDENTS DASHBOARD
 # ---------------------------------------------------
 
-with students_tab:
+elif st.session_state.active_module == "Students":
 
     students = student_controller.get_all_students()
     enrollments = enrollment_controller.get_all_enrollments()
@@ -541,7 +574,6 @@ with students_tab:
             key="open_add_student"
         ):
             st.session_state.student_action = "Add Student"
-            rerun_app()
 
     with col2:
         action_card(
@@ -555,7 +587,6 @@ with students_tab:
             key="open_view_students"
         ):
             st.session_state.student_action = "View Students"
-            rerun_app()
 
     with col3:
         action_card(
@@ -569,13 +600,10 @@ with students_tab:
             key="open_delete_student"
         ):
             st.session_state.student_action = "Delete Student"
-            rerun_app()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    selected_student_action = st.session_state.student_action
-
-    if selected_student_action == "Add Student":
+    if st.session_state.student_action == "Add Student":
 
         page_heading(
             "Add Student",
@@ -625,7 +653,7 @@ with students_tab:
 
                     st.success("Student added successfully")
 
-    elif selected_student_action == "View Students":
+    elif st.session_state.student_action == "View Students":
 
         page_heading(
             "View Students",
@@ -636,40 +664,35 @@ with students_tab:
 
         if students:
 
-            table_html = table_start(
+            rows = []
+
+            for student in students:
+                data = student.to_dict()
+
+                rows.append(
+                    [
+                        data.get("student_id"),
+                        data.get("name"),
+                        data.get("email"),
+                        data.get("phone")
+                    ]
+                )
+
+            custom_table(
                 [
                     "Student ID",
                     "Name",
                     "Email",
                     "Phone"
-                ]
-            )
-
-            for student in students:
-
-                data = student.to_dict()
-
-                table_html += f"""
-                <tr>
-                    <td>{safe(data.get("student_id"))}</td>
-                    <td>{safe(data.get("name"))}</td>
-                    <td>{safe(data.get("email"))}</td>
-                    <td>{safe(data.get("phone"))}</td>
-                </tr>
-                """
-
-            table_html += table_end()
-
-            st.markdown(
-                table_html,
-                unsafe_allow_html=True
+                ],
+                rows
             )
 
         else:
 
             st.info("No students found")
 
-    elif selected_student_action == "Delete Student":
+    elif st.session_state.student_action == "Delete Student":
 
         page_heading(
             "Delete Student",
@@ -723,6 +746,7 @@ with students_tab:
                                 "Student and related enrollments deleted successfully"
                             )
 
+                            st.session_state.student_action = "View Students"
                             rerun_app()
 
                         else:
@@ -738,7 +762,7 @@ with students_tab:
 # TEACHERS DASHBOARD
 # ---------------------------------------------------
 
-with teachers_tab:
+elif st.session_state.active_module == "Teachers":
 
     teachers = teacher_controller.get_all_teachers()
 
@@ -789,7 +813,6 @@ with teachers_tab:
             key="open_add_teacher"
         ):
             st.session_state.teacher_action = "Add Teacher"
-            rerun_app()
 
     with col2:
         action_card(
@@ -803,13 +826,10 @@ with teachers_tab:
             key="open_view_teachers"
         ):
             st.session_state.teacher_action = "View Teachers"
-            rerun_app()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    selected_teacher_action = st.session_state.teacher_action
-
-    if selected_teacher_action == "Add Teacher":
+    if st.session_state.teacher_action == "Add Teacher":
 
         page_heading(
             "Add Teacher",
@@ -853,7 +873,7 @@ with teachers_tab:
 
                     st.success("Teacher added successfully")
 
-    elif selected_teacher_action == "View Teachers":
+    elif st.session_state.teacher_action == "View Teachers":
 
         page_heading(
             "View Teachers",
@@ -864,31 +884,26 @@ with teachers_tab:
 
         if teachers:
 
-            table_html = table_start(
+            rows = []
+
+            for teacher in teachers:
+                data = teacher.to_dict()
+
+                rows.append(
+                    [
+                        data.get("teacher_id"),
+                        data.get("name"),
+                        data.get("department")
+                    ]
+                )
+
+            custom_table(
                 [
                     "Teacher ID",
                     "Name",
                     "Department"
-                ]
-            )
-
-            for teacher in teachers:
-
-                data = teacher.to_dict()
-
-                table_html += f"""
-                <tr>
-                    <td>{safe(data.get("teacher_id"))}</td>
-                    <td>{safe(data.get("name"))}</td>
-                    <td>{safe(data.get("department"))}</td>
-                </tr>
-                """
-
-            table_html += table_end()
-
-            st.markdown(
-                table_html,
-                unsafe_allow_html=True
+                ],
+                rows
             )
 
         else:
@@ -900,7 +915,7 @@ with teachers_tab:
 # ENROLLMENTS DASHBOARD
 # ---------------------------------------------------
 
-with enrollments_tab:
+elif st.session_state.active_module == "Enrollments":
 
     enrollments = enrollment_controller.get_all_enrollments()
     students = student_controller.get_all_students()
@@ -960,7 +975,6 @@ with enrollments_tab:
             key="open_enroll_student"
         ):
             st.session_state.enrollment_action = "Enroll Student"
-            rerun_app()
 
     with col2:
         action_card(
@@ -974,13 +988,10 @@ with enrollments_tab:
             key="open_view_enrollments"
         ):
             st.session_state.enrollment_action = "View Enrollments"
-            rerun_app()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    selected_enrollment_action = st.session_state.enrollment_action
-
-    if selected_enrollment_action == "Enroll Student":
+    if st.session_state.enrollment_action == "Enroll Student":
 
         page_heading(
             "Enroll Student",
@@ -1060,7 +1071,7 @@ with enrollments_tab:
 
                         st.error(str(e))
 
-    elif selected_enrollment_action == "View Enrollments":
+    elif st.session_state.enrollment_action == "View Enrollments":
 
         page_heading(
             "View Enrollments",
@@ -1080,24 +1091,20 @@ with enrollments_tab:
                     if key not in all_keys:
                         all_keys.append(key)
 
-            table_html = table_start(all_keys)
+            rows = []
 
             for enrollment in enrollments:
-
                 data = enrollment.to_dict()
-
-                table_html += "<tr>"
+                row = []
 
                 for key in all_keys:
-                    table_html += f"<td>{safe(data.get(key))}</td>"
+                    row.append(data.get(key))
 
-                table_html += "</tr>"
+                rows.append(row)
 
-            table_html += table_end()
-
-            st.markdown(
-                table_html,
-                unsafe_allow_html=True
+            custom_table(
+                all_keys,
+                rows
             )
 
         else:
