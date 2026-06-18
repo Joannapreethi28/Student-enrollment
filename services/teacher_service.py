@@ -1,12 +1,10 @@
-rom repositories.teacher_repository import TeacherRepository
+from repositories.teacher_repository import TeacherRepository
 from models.teacher import Teacher
 
 
 class TeacherService:
 
-    def __init__(
-        self
-    ):
+    def __init__(self):
 
         self.teacher_repository = TeacherRepository()
 
@@ -27,9 +25,7 @@ class TeacherService:
             teacher
         )
 
-    def get_all_teachers(
-        self
-    ):
+    def get_all_teachers(self):
 
         return self.teacher_repository.get_all_teachers()
 
@@ -37,6 +33,7 @@ class TeacherService:
         self,
         teacher_id
     ):
+
         return self.teacher_repository.get_teacher_by_id(
             teacher_id
         )
