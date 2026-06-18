@@ -1,4 +1,4 @@
-rom database.db import students, enrollments
+from database.db import students, enrollments
 
 
 class StudentRepository:
