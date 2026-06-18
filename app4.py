@@ -13,7 +13,7 @@ from controllers.enrollment_controller import EnrollmentController
 st.set_page_config(
     page_title="Student Enrollment System",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 
@@ -24,6 +24,20 @@ st.set_page_config(
 student_controller = StudentController()
 teacher_controller = TeacherController()
 enrollment_controller = EnrollmentController()
+
+
+# ---------------------------------------------------
+# SESSION STATE
+# ---------------------------------------------------
+
+if "student_action" not in st.session_state:
+    st.session_state.student_action = "Add Student"
+
+if "teacher_action" not in st.session_state:
+    st.session_state.teacher_action = "Add Teacher"
+
+if "enrollment_action" not in st.session_state:
+    st.session_state.enrollment_action = "Enroll Student"
 
 
 # ---------------------------------------------------
@@ -55,8 +69,8 @@ def page_heading(title, subtitle):
     st.markdown(
         f"""
         <div class="page-heading">
-            <h2>{title}</h2>
-            <p>{subtitle}</p>
+            <h2>{safe(title)}</h2>
+            <p>{safe(subtitle)}</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -67,13 +81,49 @@ def metric_card(title, value, caption):
     st.markdown(
         f"""
         <div class="metric-card">
-            <p class="metric-title">{title}</p>
-            <h1>{value}</h1>
-            <p class="metric-caption">{caption}</p>
+            <p class="metric-title">{safe(title)}</p>
+            <h1>{safe(value)}</h1>
+            <p class="metric-caption">{safe(caption)}</p>
         </div>
         """,
         unsafe_allow_html=True
     )
+
+
+def action_card(title, description):
+    st.markdown(
+        f"""
+        <div class="action-card">
+            <h3>{safe(title)}</h3>
+            <p>{safe(description)}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def table_start(headers):
+    header_html = ""
+
+    for header in headers:
+        header_html += f"<th>{safe(header)}</th>"
+
+    return f"""
+    <table class="custom-table">
+        <thead>
+            <tr>
+                {header_html}
+            </tr>
+        </thead>
+        <tbody>
+    """
+
+
+def table_end():
+    return """
+        </tbody>
+    </table>
+    """
 
 
 # ---------------------------------------------------
@@ -93,18 +143,14 @@ st.markdown(
         padding-bottom: 3rem;
     }
 
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #111827 0%, #1e293b 60%, #0f172a 100%);
-    }
-
-    [data-testid="stSidebar"] * {
-        color: white;
+    section[data-testid="stSidebar"] {
+        display: none;
     }
 
     .hero {
         background: linear-gradient(120deg, #2563eb 0%, #7c3aed 50%, #0891b2 100%);
-        padding: 35px;
-        border-radius: 26px;
+        padding: 36px;
+        border-radius: 28px;
         color: white;
         margin-bottom: 28px;
         box-shadow: 0 20px 45px rgba(37, 99, 235, 0.25);
@@ -125,17 +171,17 @@ st.markdown(
     }
 
     .page-heading {
-        background: rgba(255, 255, 255, 0.82);
+        background: rgba(255, 255, 255, 0.86);
         padding: 22px 26px;
-        border-radius: 20px;
+        border-radius: 22px;
         border: 1px solid rgba(148, 163, 184, 0.25);
         box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
-        margin-bottom: 22px;
+        margin-bottom: 24px;
     }
 
     .page-heading h2 {
         color: #0f172a;
-        margin-bottom: 4px;
+        margin-bottom: 5px;
         font-weight: 800;
     }
 
@@ -145,12 +191,13 @@ st.markdown(
     }
 
     .metric-card {
-        background: rgba(255, 255, 255, 0.92);
+        background: rgba(255, 255, 255, 0.94);
         padding: 24px;
-        border-radius: 22px;
+        border-radius: 24px;
         border: 1px solid rgba(148, 163, 184, 0.25);
         box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
         transition: 0.25s ease;
+        min-height: 160px;
     }
 
     .metric-card:hover {
@@ -179,138 +226,120 @@ st.markdown(
         font-size: 14px;
     }
 
-    .glass-card {
-        background: rgba(255, 255, 255, 0.9);
+    .action-card {
+        background: rgba(255, 255, 255, 0.94);
         padding: 24px;
-        border-radius: 22px;
+        border-radius: 24px;
         border: 1px solid rgba(148, 163, 184, 0.25);
         box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
-        margin-bottom: 20px;
+        min-height: 150px;
+        margin-bottom: 12px;
+        transition: 0.25s ease;
     }
 
-    .glass-card h3 {
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.13);
+    }
+
+    .action-card h3 {
         color: #0f172a;
+        font-weight: 800;
         margin-bottom: 8px;
     }
 
-    .glass-card p {
+    .action-card p {
         color: #475569;
         margin-bottom: 0;
+        font-size: 15px;
+    }
+
+    .module-box {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 26px;
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .module-box h3 {
+        color: #0f172a;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .module-box p {
+        color: #475569;
     }
 
     div[data-testid="stForm"] {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.92);
         padding: 25px;
-        border-radius: 22px;
+        border-radius: 24px;
         border: 1px solid rgba(148, 163, 184, 0.25);
         box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
     }
 
-    .student-table {
+    .custom-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0 12px;
-        margin-top: 10px;
+        margin-top: 12px;
     }
 
-    .student-table thead tr {
+    .custom-table thead tr {
         background: linear-gradient(120deg, #2563eb, #7c3aed);
         color: white;
     }
 
-    .student-table th {
+    .custom-table th {
         padding: 16px;
         text-align: left;
         font-size: 15px;
+        color: white;
     }
 
-    .student-table th:first-child {
+    .custom-table th:first-child {
         border-radius: 16px 0 0 16px;
     }
 
-    .student-table th:last-child {
+    .custom-table th:last-child {
         border-radius: 0 16px 16px 0;
     }
 
-    .student-table tbody tr {
-        background: rgba(255, 255, 255, 0.94);
+    .custom-table tbody tr {
+        background: rgba(255, 255, 255, 0.96);
         box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
         transition: 0.2s ease;
     }
 
-    .student-table tbody tr:hover {
+    .custom-table tbody tr:hover {
         transform: scale(1.01);
         box-shadow: 0 14px 32px rgba(15, 23, 42, 0.13);
     }
 
-    .student-table td {
+    .custom-table td {
         padding: 16px;
         color: #334155;
         font-size: 15px;
     }
 
-    .student-table td:first-child {
+    .custom-table td:first-child {
         border-radius: 16px 0 0 16px;
         font-weight: 700;
         color: #1d4ed8;
     }
 
-    .student-table td:last-child {
+    .custom-table td:last-child {
         border-radius: 0 16px 16px 0;
-    }
-
-    .simple-card {
-        background: rgba(255, 255, 255, 0.92);
-        padding: 18px 22px;
-        border-radius: 18px;
-        border-left: 6px solid #2563eb;
-        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
-        margin-bottom: 14px;
-    }
-
-    .teacher-card {
-        border-left-color: #7c3aed;
-    }
-
-    .enrollment-card {
-        border-left-color: #0891b2;
-    }
-
-    .card-title {
-        color: #0f172a;
-        font-size: 18px;
-        font-weight: 800;
-        margin-bottom: 5px;
-    }
-
-    .card-text {
-        color: #475569;
-        font-size: 14px;
-        margin-bottom: 2px;
-    }
-
-    .delete-box {
-        background: rgba(255, 255, 255, 0.9);
-        padding: 24px;
-        border-radius: 22px;
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
-        margin-top: 24px;
-    }
-
-    .delete-box h3 {
-        color: #991b1b;
-        margin-bottom: 8px;
-    }
-
-    .delete-box p {
-        color: #64748b;
     }
 
     .stButton > button {
         border-radius: 14px;
         border: none;
-        padding: 0.6rem 1rem;
+        padding: 0.65rem 1rem;
         font-weight: 700;
         background: linear-gradient(120deg, #2563eb, #7c3aed);
         color: white;
@@ -325,6 +354,28 @@ st.markdown(
 
     .stTextInput input {
         border-radius: 12px;
+    }
+
+    div[data-baseweb="tab-list"] {
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.86);
+        padding: 12px;
+        border-radius: 22px;
+        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+        margin-bottom: 24px;
+    }
+
+    button[data-baseweb="tab"] {
+        background: transparent;
+        border-radius: 16px;
+        padding: 12px 22px;
+        font-weight: 800;
+        color: #334155;
+    }
+
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background: linear-gradient(120deg, #2563eb, #7c3aed);
+        color: white;
     }
 
     h1, h2, h3 {
@@ -345,7 +396,7 @@ st.markdown(
     """
     <div class="hero">
         <h1>Student Enrollment System</h1>
-        <p>Manage students, teachers, and enrollments with a modern interactive dashboard.</p>
+        <p>Module-based web application for managing students, teachers, and enrollments.</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -353,44 +404,32 @@ st.markdown(
 
 
 # ---------------------------------------------------
-# SIDEBAR MENU
+# TOP NAVIGATION
 # ---------------------------------------------------
 
-st.sidebar.markdown("## Navigation")
-
-menu = st.sidebar.radio(
-    "Choose a page",
+common_tab, students_tab, teachers_tab, enrollments_tab = st.tabs(
     [
-        "Dashboard",
-        "Add Student",
-        "View Students",
-        "Delete Student",
-        "Add Teacher",
-        "View Teachers",
-        "Enroll Student",
-        "View Enrollments"
+        "Common Dashboard",
+        "Students",
+        "Teachers",
+        "Enrollments"
     ]
 )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### Project")
-st.sidebar.markdown("Student Enrollment System")
-st.sidebar.markdown("Built using Streamlit and Python")
-
 
 # ---------------------------------------------------
-# DASHBOARD
+# COMMON DASHBOARD
 # ---------------------------------------------------
 
-if menu == "Dashboard":
+with common_tab:
 
     students = student_controller.get_all_students()
     teachers = teacher_controller.get_all_teachers()
     enrollments = enrollment_controller.get_all_enrollments()
 
     page_heading(
-        "Dashboard",
-        "Overview of students, teachers, and enrollment records."
+        "Common Dashboard",
+        "Overall summary of the complete Student Enrollment System."
     )
 
     col1, col2, col3 = st.columns(3)
@@ -418,363 +457,226 @@ if menu == "Dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    left, right = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
-    with left:
-        st.markdown(
-            """
-            <div class="glass-card">
-                <h3>Student Module</h3>
-                <p>Add, view, and delete students. When a student is deleted, related enrollments are also removed.</p>
-            </div>
-            """,
-            unsafe_allow_html=True
+    with col1:
+        action_card(
+            "Students Module",
+            "Manage student registration, student records, and student deletion."
         )
 
-    with right:
-        st.markdown(
-            """
-            <div class="glass-card">
-                <h3>Enrollment Module</h3>
-                <p>Enroll students under teachers and view all enrollment records in one place.</p>
-            </div>
-            """,
-            unsafe_allow_html=True
+    with col2:
+        action_card(
+            "Teachers Module",
+            "Manage teacher details and view teacher records."
+        )
+
+    with col3:
+        action_card(
+            "Enrollments Module",
+            "Enroll students under teachers and view enrollment records."
         )
 
 
 # ---------------------------------------------------
-# ADD STUDENT
+# STUDENTS DASHBOARD
 # ---------------------------------------------------
 
-elif menu == "Add Student":
-
-    page_heading(
-        "Add Student",
-        "Enter student details and save them into the system."
-    )
-
-    with st.form("add_student_form", clear_on_submit=True):
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            student_id = st.text_input("Student ID")
-            email = st.text_input("Email")
-
-        with col2:
-            name = st.text_input("Name")
-            phone = st.text_input("Phone")
-
-        submitted = st.form_submit_button(
-            "Save Student",
-            use_container_width=True
-        )
-
-        if submitted:
-
-            student_id = clean(student_id)
-            name = clean(name)
-            email = clean(email)
-            phone = clean(phone)
-
-            if not student_id or not name or not email or not phone:
-
-                st.warning("Please fill all student details")
-
-            elif student_controller.get_student_by_id(student_id):
-
-                st.error("Student ID already exists")
-
-            else:
-
-                student_controller.add_student(
-                    student_id,
-                    name,
-                    email,
-                    phone
-                )
-
-                st.success("Student added successfully")
-
-
-# ---------------------------------------------------
-# VIEW STUDENTS
-# ---------------------------------------------------
-
-elif menu == "View Students":
-
-    page_heading(
-        "View Students",
-        "View all students in a clean table format."
-    )
+with students_tab:
 
     students = student_controller.get_all_students()
+    enrollments = enrollment_controller.get_all_enrollments()
 
-    if students:
+    page_heading(
+        "Students Dashboard",
+        "Manage all student-related operations from one module."
+    )
 
-        table_rows = ""
+    col1, col2, col3 = st.columns(3)
 
-        for student in students:
-
-            data = student.to_dict()
-
-            table_rows += f"""
-            <tr>
-                <td>{safe(data.get("student_id"))}</td>
-                <td>{safe(data.get("name"))}</td>
-                <td>{safe(data.get("email"))}</td>
-                <td>{safe(data.get("phone"))}</td>
-            </tr>
-            """
-
-        st.markdown(
-            f"""
-            <table class="student-table">
-                <thead>
-                    <tr>
-                        <th>Student ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {table_rows}
-                </tbody>
-            </table>
-            """,
-            unsafe_allow_html=True
+    with col1:
+        metric_card(
+            "Total Students",
+            len(students),
+            "Registered students"
         )
 
-        st.markdown(
-            """
-            <div class="delete-box">
-                <h3>Delete Student</h3>
-                <p>Select a student below if you want to remove the student and related enrollments.</p>
-            </div>
-            """,
-            unsafe_allow_html=True
+    with col2:
+        metric_card(
+            "Student Actions",
+            "3",
+            "Add, view, and delete"
         )
 
-        student_options = {}
-
-        for student in students:
-            data = student.to_dict()
-            label = f"{data.get('student_id')} - {data.get('name')}"
-            student_options[label] = data.get("student_id")
-
-        selected_student = st.selectbox(
-            "Select Student to Delete",
-            list(student_options.keys())
+    with col3:
+        metric_card(
+            "Linked Enrollments",
+            len(enrollments),
+            "Enrollment records connected to students"
         )
 
-        confirm_delete = st.checkbox(
-            "I confirm that I want to delete this student"
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div class="module-box">
+            <h3>Student Module Actions</h3>
+            <p>Select an action card below to work inside the Students module.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        action_card(
+            "Add Student",
+            "Register a new student with ID, name, email, and phone number."
         )
 
         if st.button(
-            "Delete Selected Student",
-            use_container_width=True
+            "Open Add Student",
+            use_container_width=True,
+            key="open_add_student"
         ):
+            st.session_state.student_action = "Add Student"
+            rerun_app()
 
-            if not confirm_delete:
+    with col2:
+        action_card(
+            "View Students",
+            "Display all students in a clean table format."
+        )
 
-                st.warning("Please confirm before deleting")
+        if st.button(
+            "Open View Students",
+            use_container_width=True,
+            key="open_view_students"
+        ):
+            st.session_state.student_action = "View Students"
+            rerun_app()
 
-            else:
+    with col3:
+        action_card(
+            "Delete Student",
+            "Delete a student and automatically remove related enrollments."
+        )
 
-                student_id = student_options[selected_student]
+        if st.button(
+            "Open Delete Student",
+            use_container_width=True,
+            key="open_delete_student"
+        ):
+            st.session_state.student_action = "Delete Student"
+            rerun_app()
 
-                result = student_controller.delete_student(
-                    student_id
-                )
+    st.markdown("<br>", unsafe_allow_html=True)
 
-                if result:
+    selected_student_action = st.session_state.student_action
 
-                    st.success(
-                        "Student and related enrollments deleted successfully"
-                    )
+    if selected_student_action == "Add Student":
 
-                    rerun_app()
+        page_heading(
+            "Add Student",
+            "Enter student details and save them into the system."
+        )
 
-                else:
+        with st.form("add_student_form", clear_on_submit=True):
 
-                    st.error("Student not found")
+            col1, col2 = st.columns(2)
 
-    else:
+            with col1:
+                student_id = st.text_input("Student ID")
+                email = st.text_input("Email")
 
-        st.info("No students found")
-
-
-# ---------------------------------------------------
-# DELETE STUDENT
-# ---------------------------------------------------
-
-elif menu == "Delete Student":
-
-    page_heading(
-        "Delete Student",
-        "Choose a student and remove the student with related enrollments."
-    )
-
-    students = student_controller.get_all_students()
-
-    if students:
-
-        student_options = {}
-
-        for student in students:
-            data = student.to_dict()
-            label = f"{data.get('student_id')} - {data.get('name')}"
-            student_options[label] = data.get("student_id")
-
-        with st.form("delete_student_form"):
-
-            selected_student = st.selectbox(
-                "Select Student",
-                list(student_options.keys())
-            )
-
-            confirm = st.checkbox(
-                "I confirm that I want to delete this student"
-            )
+            with col2:
+                name = st.text_input("Name")
+                phone = st.text_input("Phone")
 
             submitted = st.form_submit_button(
-                "Delete Student",
+                "Save Student",
                 use_container_width=True
             )
 
             if submitted:
 
-                if not confirm:
+                student_id = clean(student_id)
+                name = clean(name)
+                email = clean(email)
+                phone = clean(phone)
 
-                    st.warning("Please confirm before deleting")
+                if not student_id or not name or not email or not phone:
+
+                    st.warning("Please fill all student details")
+
+                elif student_controller.get_student_by_id(student_id):
+
+                    st.error("Student ID already exists")
 
                 else:
 
-                    student_id = student_options[selected_student]
-
-                    result = student_controller.delete_student(
-                        student_id
+                    student_controller.add_student(
+                        student_id,
+                        name,
+                        email,
+                        phone
                     )
 
-                    if result:
+                    st.success("Student added successfully")
 
-                        st.success(
-                            "Student and related enrollments deleted successfully"
-                        )
+    elif selected_student_action == "View Students":
 
-                        rerun_app()
-
-                    else:
-
-                        st.error("Student not found")
-
-    else:
-
-        st.info("No students available to delete")
-
-
-# ---------------------------------------------------
-# ADD TEACHER
-# ---------------------------------------------------
-
-elif menu == "Add Teacher":
-
-    page_heading(
-        "Add Teacher",
-        "Enter teacher details and save them into the system."
-    )
-
-    with st.form("add_teacher_form", clear_on_submit=True):
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            teacher_id = st.text_input("Teacher ID")
-
-        with col2:
-            name = st.text_input("Teacher Name")
-
-        department = st.text_input("Department")
-
-        submitted = st.form_submit_button(
-            "Save Teacher",
-            use_container_width=True
+        page_heading(
+            "View Students",
+            "All student records are displayed below."
         )
 
-        if submitted:
+        students = student_controller.get_all_students()
 
-            teacher_id = clean(teacher_id)
-            name = clean(name)
-            department = clean(department)
+        if students:
 
-            if not teacher_id or not name or not department:
+            table_html = table_start(
+                [
+                    "Student ID",
+                    "Name",
+                    "Email",
+                    "Phone"
+                ]
+            )
 
-                st.warning("Please fill all teacher details")
+            for student in students:
 
-            else:
+                data = student.to_dict()
 
-                teacher_controller.add_teacher(
-                    teacher_id,
-                    name,
-                    department
-                )
+                table_html += f"""
+                <tr>
+                    <td>{safe(data.get("student_id"))}</td>
+                    <td>{safe(data.get("name"))}</td>
+                    <td>{safe(data.get("email"))}</td>
+                    <td>{safe(data.get("phone"))}</td>
+                </tr>
+                """
 
-                st.success("Teacher added successfully")
-
-
-# ---------------------------------------------------
-# VIEW TEACHERS
-# ---------------------------------------------------
-
-elif menu == "View Teachers":
-
-    page_heading(
-        "View Teachers",
-        "View all teacher records in the system."
-    )
-
-    teachers = teacher_controller.get_all_teachers()
-
-    if teachers:
-
-        for teacher in teachers:
-
-            data = teacher.to_dict()
+            table_html += table_end()
 
             st.markdown(
-                f"""
-                <div class="simple-card teacher-card">
-                    <div class="card-title">{safe(data.get("name"))}</div>
-                    <div class="card-text"><b>ID:</b> {safe(data.get("teacher_id"))}</div>
-                    <div class="card-text"><b>Department:</b> {safe(data.get("department"))}</div>
-                </div>
-                """,
+                table_html,
                 unsafe_allow_html=True
             )
 
-    else:
+        else:
 
-        st.info("No teachers found")
+            st.info("No students found")
 
+    elif selected_student_action == "Delete Student":
 
-# ---------------------------------------------------
-# ENROLL STUDENT
-# ---------------------------------------------------
+        page_heading(
+            "Delete Student",
+            "Select a student and remove the student with related enrollments."
+        )
 
-elif menu == "Enroll Student":
-
-    page_heading(
-        "Enroll Student",
-        "Select a student and teacher to create an enrollment record."
-    )
-
-    students = student_controller.get_all_students()
-    teachers = teacher_controller.get_all_teachers()
-
-    with st.form("enroll_student_form"):
+        students = student_controller.get_all_students()
 
         if students:
 
@@ -785,104 +687,419 @@ elif menu == "Enroll Student":
                 label = f"{data.get('student_id')} - {data.get('name')}"
                 student_options[label] = data.get("student_id")
 
-            selected_student = st.selectbox(
-                "Select Student",
-                list(student_options.keys())
-            )
+            with st.form("delete_student_form"):
 
-            student_id = student_options[selected_student]
+                selected_student = st.selectbox(
+                    "Select Student",
+                    list(student_options.keys())
+                )
+
+                confirm = st.checkbox(
+                    "I confirm that I want to delete this student"
+                )
+
+                submitted = st.form_submit_button(
+                    "Delete Student",
+                    use_container_width=True
+                )
+
+                if submitted:
+
+                    if not confirm:
+
+                        st.warning("Please confirm before deleting")
+
+                    else:
+
+                        student_id = student_options[selected_student]
+
+                        result = student_controller.delete_student(
+                            student_id
+                        )
+
+                        if result:
+
+                            st.success(
+                                "Student and related enrollments deleted successfully"
+                            )
+
+                            rerun_app()
+
+                        else:
+
+                            st.error("Student not found")
 
         else:
 
-            st.warning("No students available. Add a student first.")
-            student_id = ""
+            st.info("No students available to delete")
+
+
+# ---------------------------------------------------
+# TEACHERS DASHBOARD
+# ---------------------------------------------------
+
+with teachers_tab:
+
+    teachers = teacher_controller.get_all_teachers()
+
+    page_heading(
+        "Teachers Dashboard",
+        "Manage all teacher-related operations from one module."
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        metric_card(
+            "Total Teachers",
+            len(teachers),
+            "Teachers currently available"
+        )
+
+    with col2:
+        metric_card(
+            "Teacher Actions",
+            "2",
+            "Add and view teachers"
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div class="module-box">
+            <h3>Teacher Module Actions</h3>
+            <p>Select an action card below to work inside the Teachers module.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        action_card(
+            "Add Teacher",
+            "Register a new teacher with teacher ID, name, and department."
+        )
+
+        if st.button(
+            "Open Add Teacher",
+            use_container_width=True,
+            key="open_add_teacher"
+        ):
+            st.session_state.teacher_action = "Add Teacher"
+            rerun_app()
+
+    with col2:
+        action_card(
+            "View Teachers",
+            "Display all teacher records in a clean table format."
+        )
+
+        if st.button(
+            "Open View Teachers",
+            use_container_width=True,
+            key="open_view_teachers"
+        ):
+            st.session_state.teacher_action = "View Teachers"
+            rerun_app()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    selected_teacher_action = st.session_state.teacher_action
+
+    if selected_teacher_action == "Add Teacher":
+
+        page_heading(
+            "Add Teacher",
+            "Enter teacher details and save them into the system."
+        )
+
+        with st.form("add_teacher_form", clear_on_submit=True):
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                teacher_id = st.text_input("Teacher ID")
+
+            with col2:
+                name = st.text_input("Teacher Name")
+
+            department = st.text_input("Department")
+
+            submitted = st.form_submit_button(
+                "Save Teacher",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                teacher_id = clean(teacher_id)
+                name = clean(name)
+                department = clean(department)
+
+                if not teacher_id or not name or not department:
+
+                    st.warning("Please fill all teacher details")
+
+                else:
+
+                    teacher_controller.add_teacher(
+                        teacher_id,
+                        name,
+                        department
+                    )
+
+                    st.success("Teacher added successfully")
+
+    elif selected_teacher_action == "View Teachers":
+
+        page_heading(
+            "View Teachers",
+            "All teacher records are displayed below."
+        )
+
+        teachers = teacher_controller.get_all_teachers()
 
         if teachers:
 
-            teacher_options = {}
-
-            for teacher in teachers:
-                data = teacher.to_dict()
-                label = f"{data.get('teacher_id')} - {data.get('name')}"
-                teacher_options[label] = data.get("teacher_id")
-
-            selected_teacher = st.selectbox(
-                "Select Teacher",
-                list(teacher_options.keys())
+            table_html = table_start(
+                [
+                    "Teacher ID",
+                    "Name",
+                    "Department"
+                ]
             )
 
-            teacher_id = teacher_options[selected_teacher]
+            for teacher in teachers:
 
-        else:
+                data = teacher.to_dict()
 
-            st.warning("No teachers available. Add a teacher first.")
-            teacher_id = ""
-
-        submitted = st.form_submit_button(
-            "Enroll Student",
-            use_container_width=True
-        )
-
-        if submitted:
-
-            if not student_id or not teacher_id:
-
-                st.warning("Student and teacher are required for enrollment")
-
-            else:
-
-                try:
-
-                    enrollment_controller.enroll_student(
-                        student_id,
-                        teacher_id
-                    )
-
-                    st.success("Enrollment successful")
-
-                except Exception as e:
-
-                    st.error(str(e))
-
-
-# ---------------------------------------------------
-# VIEW ENROLLMENTS
-# ---------------------------------------------------
-
-elif menu == "View Enrollments":
-
-    page_heading(
-        "View Enrollments",
-        "View all student-teacher enrollment records."
-    )
-
-    enrollments = enrollment_controller.get_all_enrollments()
-
-    if enrollments:
-
-        for enrollment in enrollments:
-
-            data = enrollment.to_dict()
-
-            card_details = ""
-
-            for key, value in data.items():
-                card_details += f"""
-                <div class="card-text">
-                    <b>{safe(key)}:</b> {safe(value)}
-                </div>
+                table_html += f"""
+                <tr>
+                    <td>{safe(data.get("teacher_id"))}</td>
+                    <td>{safe(data.get("name"))}</td>
+                    <td>{safe(data.get("department"))}</td>
+                </tr>
                 """
 
+            table_html += table_end()
+
             st.markdown(
-                f"""
-                <div class="simple-card enrollment-card">
-                    <div class="card-title">Enrollment Record</div>
-                    {card_details}
-                </div>
-                """,
+                table_html,
                 unsafe_allow_html=True
             )
 
-    else:
+        else:
 
-        st.info("No enrollments found")
+            st.info("No teachers found")
+
+
+# ---------------------------------------------------
+# ENROLLMENTS DASHBOARD
+# ---------------------------------------------------
+
+with enrollments_tab:
+
+    enrollments = enrollment_controller.get_all_enrollments()
+    students = student_controller.get_all_students()
+    teachers = teacher_controller.get_all_teachers()
+
+    page_heading(
+        "Enrollments Dashboard",
+        "Manage student-teacher enrollment operations from one module."
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        metric_card(
+            "Total Enrollments",
+            len(enrollments),
+            "Active enrollment records"
+        )
+
+    with col2:
+        metric_card(
+            "Available Students",
+            len(students),
+            "Students ready for enrollment"
+        )
+
+    with col3:
+        metric_card(
+            "Available Teachers",
+            len(teachers),
+            "Teachers available for mapping"
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div class="module-box">
+            <h3>Enrollment Module Actions</h3>
+            <p>Select an action card below to work inside the Enrollments module.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        action_card(
+            "Enroll Student",
+            "Map a student to a teacher and create an enrollment record."
+        )
+
+        if st.button(
+            "Open Enroll Student",
+            use_container_width=True,
+            key="open_enroll_student"
+        ):
+            st.session_state.enrollment_action = "Enroll Student"
+            rerun_app()
+
+    with col2:
+        action_card(
+            "View Enrollments",
+            "Display all enrollment records in a clean table format."
+        )
+
+        if st.button(
+            "Open View Enrollments",
+            use_container_width=True,
+            key="open_view_enrollments"
+        ):
+            st.session_state.enrollment_action = "View Enrollments"
+            rerun_app()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    selected_enrollment_action = st.session_state.enrollment_action
+
+    if selected_enrollment_action == "Enroll Student":
+
+        page_heading(
+            "Enroll Student",
+            "Select a student and teacher to create an enrollment record."
+        )
+
+        students = student_controller.get_all_students()
+        teachers = teacher_controller.get_all_teachers()
+
+        with st.form("enroll_student_form"):
+
+            if students:
+
+                student_options = {}
+
+                for student in students:
+                    data = student.to_dict()
+                    label = f"{data.get('student_id')} - {data.get('name')}"
+                    student_options[label] = data.get("student_id")
+
+                selected_student = st.selectbox(
+                    "Select Student",
+                    list(student_options.keys())
+                )
+
+                student_id = student_options[selected_student]
+
+            else:
+
+                st.warning("No students available. Add a student first.")
+                student_id = ""
+
+            if teachers:
+
+                teacher_options = {}
+
+                for teacher in teachers:
+                    data = teacher.to_dict()
+                    label = f"{data.get('teacher_id')} - {data.get('name')}"
+                    teacher_options[label] = data.get("teacher_id")
+
+                selected_teacher = st.selectbox(
+                    "Select Teacher",
+                    list(teacher_options.keys())
+                )
+
+                teacher_id = teacher_options[selected_teacher]
+
+            else:
+
+                st.warning("No teachers available. Add a teacher first.")
+                teacher_id = ""
+
+            submitted = st.form_submit_button(
+                "Enroll Student",
+                use_container_width=True
+            )
+
+            if submitted:
+
+                if not student_id or not teacher_id:
+
+                    st.warning("Student and teacher are required for enrollment")
+
+                else:
+
+                    try:
+
+                        enrollment_controller.enroll_student(
+                            student_id,
+                            teacher_id
+                        )
+
+                        st.success("Enrollment successful")
+
+                    except Exception as e:
+
+                        st.error(str(e))
+
+    elif selected_enrollment_action == "View Enrollments":
+
+        page_heading(
+            "View Enrollments",
+            "All enrollment records are displayed below."
+        )
+
+        enrollments = enrollment_controller.get_all_enrollments()
+
+        if enrollments:
+
+            all_keys = []
+
+            for enrollment in enrollments:
+                data = enrollment.to_dict()
+
+                for key in data.keys():
+                    if key not in all_keys:
+                        all_keys.append(key)
+
+            table_html = table_start(all_keys)
+
+            for enrollment in enrollments:
+
+                data = enrollment.to_dict()
+
+                table_html += "<tr>"
+
+                for key in all_keys:
+                    table_html += f"<td>{safe(data.get(key))}</td>"
+
+                table_html += "</tr>"
+
+            table_html += table_end()
+
+            st.markdown(
+                table_html,
+                unsafe_allow_html=True
+            )
+
+        else:
+
+            st.info("No enrollments found")
