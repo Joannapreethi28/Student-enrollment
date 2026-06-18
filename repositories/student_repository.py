@@ -1,51 +1,51 @@
-
-from repositories.student_repository import StudentRepository
-from models.student import Student
+from database.db import students, enrollments
 
 
-class StudentService:
+class StudentRepository:
 
-    def __init__(self):
+    def add_student(self, student):
 
-        self.student_repository = StudentRepository()
+        students.append(student)
 
-    def add_student(
-        self,
-        student_id,
-        name,
-        email,
-        phone
-    ):
-
-        student = Student(
-            student_id,
-            name,
-            email,
-            phone
-        )
-
-        return self.student_repository.add_student(
-            student
-        )
+        return student
 
     def get_all_students(self):
 
-        return self.student_repository.get_all_students()
+        return students
 
-    def get_student_by_id(
-        self,
-        student_id
-    ):
+    def get_student_by_id(self, student_id):
 
-        return self.student_repository.get_student_by_id(
-            student_id
-        )
+        for student in students:
 
-    def delete_student(
-        self,
-        student_id
-    ):
+            if student.student_id == student_id:
 
-        return self.student_repository.delete_student(
-            student_id
-        )
+                return student
+
+        return None
+
+    def delete_student(self, student_id):
+
+        student_to_delete = None
+
+        for student in students:
+
+            if student.student_id == student_id:
+
+                student_to_delete = student
+
+                break
+
+        if student_to_delete is None:
+
+            return False
+
+        students.remove(student_to_delete)
+
+        enrollments[:] = [
+            enrollment
+            for enrollment in enrollments
+            if enrollment.student_id != student_id
+        ]
+
+        return True
+
